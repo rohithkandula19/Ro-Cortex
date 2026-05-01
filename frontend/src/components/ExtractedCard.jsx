@@ -1,4 +1,6 @@
-export default function ExtractedCard({ data, icdCodes }) {
+// Renders the structured output. Pass `reveal` to make sections fade in
+// one after the other — gives a streaming-feel demo without actually streaming.
+export default function ExtractedCard({ data, icdCodes, reveal = false }) {
   if (!data) return null
   const patient = data.patient || {}
   const diagnoses = data.diagnoses || []
@@ -54,7 +56,7 @@ export default function ExtractedCard({ data, icdCodes }) {
   return (
     <div className="flex flex-col gap-4">
       {/* Patient header */}
-      <div className="card p-5">
+      <div className={`card p-5 ${reveal ? 'fade-up' : ''}`} style={reveal ? { animationDelay: '0s' } : undefined}>
         <SectionHeader label="PATIENT" />
         <div className="grid grid-cols-3 gap-4 mb-4">
           <div>
@@ -84,7 +86,7 @@ export default function ExtractedCard({ data, icdCodes }) {
 
       {/* Diagnoses with ICD codes */}
       {diagnoses.length > 0 && (
-        <div className="card p-5">
+        <div className={`card p-5 ${reveal ? 'fade-up' : ''}`} style={reveal ? { animationDelay: '0.15s' } : undefined}>
           <SectionHeader label="DIAGNOSES & ICD-10" count={diagnoses.length} />
           <div className="flex flex-col gap-2">
             {(icdCodes && icdCodes.length > 0 ? icdCodes : diagnoses.map(d => ({ diagnosis: d }))).map((item, i) => (
@@ -114,7 +116,7 @@ export default function ExtractedCard({ data, icdCodes }) {
 
       {/* Medications */}
       {medications.length > 0 && (
-        <div className="card p-5">
+        <div className={`card p-5 ${reveal ? 'fade-up' : ''}`} style={reveal ? { animationDelay: '0.3s' } : undefined}>
           <SectionHeader label="MEDICATIONS" count={medications.length} />
           <div className="flex flex-col gap-2">
             {medications.map((med, i) => {
@@ -135,7 +137,7 @@ export default function ExtractedCard({ data, icdCodes }) {
 
       {/* Vitals */}
       {Object.keys(vitals).length > 0 && (
-        <div className="card p-5">
+        <div className={`card p-5 ${reveal ? 'fade-up' : ''}`} style={reveal ? { animationDelay: '0.45s' } : undefined}>
           <SectionHeader label="VITALS" count={Object.keys(vitals).length} />
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
             {Object.entries(vitals).map(([k, v]) => (
@@ -151,7 +153,7 @@ export default function ExtractedCard({ data, icdCodes }) {
 
       {/* Lab results */}
       {labResults.length > 0 && (
-        <div className="card p-5">
+        <div className={`card p-5 ${reveal ? 'fade-up' : ''}`} style={reveal ? { animationDelay: '0.6s' } : undefined}>
           <SectionHeader label="LAB RESULTS" count={labResults.length} />
           <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #F5E6D7' }}>
             <div className="grid grid-cols-[1.4fr_1fr_0.6fr_0.6fr] px-3 py-2 text-xs mono"

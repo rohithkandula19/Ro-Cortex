@@ -5,10 +5,12 @@ import Extract from './pages/Extract'
 import Trials from './pages/Trials'
 import Pipeline from './pages/Pipeline'
 import History from './pages/History'
+import Cohort from './pages/Cohort'
 
 const TITLES = {
   '/': 'Dashboard',
   '/extract': 'Note Extraction',
+  '/cohort': 'Cohort search',
   '/trials': 'Trial Matcher',
   '/pipeline': 'End to end pipeline',
   '/history': 'Analysis history',
@@ -17,6 +19,7 @@ const TITLES = {
 const SUBS = {
   '/': 'Live view of extractions, codes, and trial matches across your team.',
   '/extract': 'Paste a clinical note and get back structured entities, ICD-10 codes, and a confidence score.',
+  '/cohort': 'Query the whole population. Filter every extracted note by diagnosis, medication, ICD code, age, or confidence.',
   '/trials': 'Match a patient profile to active clinical trials using semantic search and rule based eligibility.',
   '/pipeline': 'Run extraction, coding, and trial matching together in a single call.',
   '/history': 'Every analysis your team has run, all in one place.',
@@ -43,6 +46,7 @@ export default function App() {
           </div>
           <Routes>
             <Route path="/extract" element={<Extract />} />
+            <Route path="/cohort" element={<Cohort />} />
             <Route path="/trials" element={<Trials />} />
             <Route path="/pipeline" element={<Pipeline />} />
             <Route path="/history" element={<History />} />

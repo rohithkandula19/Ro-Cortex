@@ -1,12 +1,16 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 
+// Navbar — translucent on top so the hero peach wash bleeds through
 export default function Navbar() {
   const loc = useLocation()
   const [open, setOpen] = useState(false)
+
+  // keeping this list flat instead of grouping. it's small enough.
   const links = [
     { to: '/', label: 'Overview' },
     { to: '/extract', label: 'Extract' },
+    { to: '/cohort', label: 'Cohort' },
     { to: '/trials', label: 'Trials' },
     { to: '/pipeline', label: 'Pipeline' },
     { to: '/history', label: 'History' },
@@ -22,10 +26,10 @@ export default function Navbar() {
           </svg>
         </div>
         <span className="text-base font-semibold tracking-tight" style={{ color: '#1B1A1F' }}>Cortex</span>
-        <span className="hidden sm:inline text-xs px-1.5 py-0.5 rounded mono" style={{ background: '#E4D9C5', color: '#39363F' }}>v1.0</span>
+        <span className="hidden sm:inline text-xs px-1.5 py-0.5 rounded mono" style={{ background: '#E4D9C5', color: '#39363F' }}>v1.1</span>
       </Link>
 
-      <div className="hidden md:flex items-center gap-6">
+      <div className="hidden md:flex items-center gap-5">
         {links.map(l => (
           <Link key={l.to} to={l.to}
             className="text-sm font-medium transition-all relative py-1"

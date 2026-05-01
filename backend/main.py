@@ -308,3 +308,111 @@ DEMO_NOTES = [
 @app.get("/demo-notes")
 def get_demo_notes():
     return DEMO_NOTES
+
+
+# ── Cohort search ────────────────────────────────────────────────────────────
+# Lets you query across every note that's been extracted.
+# This is the bit that makes the structured JSON actually useful at scale.
+
+class CohortQuery(BaseModel):
+    diagnosis: Optional[str] = None       # substring match against diagnoses[]
+    medication: Optional[str] = None      # substring match against medications[].name
+    icd_code: Optional[str] = None        # exact ICD-10 prefix
+    min_age: Optional[int] = None
+    max_age: Optional[int] = None
+    gender: Optional[str] = None
+    min_confidence: Optional[int] = None
+
+
+@app.post("/cohort")
+def cohort_search(q: CohortQuery, db: Session = Depends(get_db)):
+    """Search across all extracted notes by structured criteria.
+
+    The whole point of running NER over a pile of notes is being able to ask
+    questions like 'show me everyone on Metformin with eGFR < 60'. This endpoint
+    is the read side of that.
+    """
+    notes = db.query(ClinicalNote).order_by(ClinicalNote.created_at.desc()).all()
+    matches = []
+
+    for n in notes:
+        data = n.extracted_data or {}
+        patient = data.get("patient", {}) or {}
+        diagnoses = [str(d).lower() for d in (data.get("diagnoses") or [])]
+        meds = data.get("medications") or []
+        med_names = [
+            (m.get("name", "") if isinstance(m, dict) else str(m)).lower()
+            for m in meds
+        ]
+        icd_codes = [c.get("icd_code", "") for c in (n.icd_codes or [])]
+
+        # filters — short circuit on first miss
+        if q.diagnosis and not any(q.diagnosis.lower() in d for d in diagnoses):
+            continue
+        if q.medication and not any(q.medication.lower() in m for m in med_names):
+            continue
+        if q.icd_code and not any(c.startswith(q.icd_code) for c in icd_codes):
+            continue
+        if q.min_age is not None and (patient.get("age") or 0) < q.min_age:
+            continue
+        if q.max_age is not None and (patient.get("age") or 999) > q.max_age:
+            continue
+        if q.gender and patient.get("gender") and patient["gender"].lower() != q.gender.lower():
+            continue
+        if q.min_confidence is not None and (n.confidence_score or 0) < q.min_confidence:
+            continue
+
+        matches.append({
+            "id": n.id,
+            "patient_id": n.patient_id,
+            "age": patient.get("age"),
+            "gender": patient.get("gender"),
+            "diagnoses": data.get("diagnoses") or [],
+            "medications": [
+                m.get("name") if isinstance(m, dict) else m
+                for m in meds
+            ],
+            "icd_codes": icd_codes,
+            "confidence_score": n.confidence_score,
+            "raw_text": (n.raw_text or "")[:200],
+            "created_at": n.created_at.isoformat() if n.created_at else "",
+        })
+
+    return {
+        "total_searched": len(notes),
+        "matched": len(matches),
+        "results": matches,
+    }
+
+
+@app.get("/patient/{patient_id}/timeline")
+def patient_timeline(patient_id: str, db: Session = Depends(get_db)):
+    """All notes for a single patient, oldest first.
+
+    Useful for tracking how a patient's diagnoses, meds, and labs change over time.
+    """
+    notes = (
+        db.query(ClinicalNote)
+        .filter(ClinicalNote.patient_id == patient_id)
+        .order_by(ClinicalNote.created_at.asc())
+        .all()
+    )
+
+    timeline = []
+    for n in notes:
+        data = n.extracted_data or {}
+        timeline.append({
+            "id": n.id,
+            "created_at": n.created_at.isoformat() if n.created_at else "",
+            "diagnoses": data.get("diagnoses") or [],
+            "medications": [
+                m.get("name") if isinstance(m, dict) else m
+                for m in (data.get("medications") or [])
+            ],
+            "vitals": data.get("vitals") or {},
+            "lab_results": data.get("lab_results") or [],
+            "summary": data.get("clinical_summary") or "",
+            "confidence_score": n.confidence_score,
+        })
+
+    return {"patient_id": patient_id, "visit_count": len(timeline), "timeline": timeline}

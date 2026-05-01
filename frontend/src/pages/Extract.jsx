@@ -163,7 +163,7 @@ export default function Extract() {
 
         {result && (
           <div className="slide-in">
-            <ExtractedCard data={result.extracted} icdCodes={result.icd_codes} />
+            <ExtractedCard data={result.extracted} icdCodes={result.icd_codes} reveal />
           </div>
         )}
       </div>
