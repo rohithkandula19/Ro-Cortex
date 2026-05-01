@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { box-sizing: border-box; }
+body { background: #080810; color: #fff; font-family: 'Inter', sans-serif; margin: 0; }
+.mono { font-family: 'JetBrains Mono', monospace; }
+
+@keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.pulse-dot { animation: pulse-dot 1.2s ease-in-out infinite; }
+
+@keyframes slideIn { from{transform:translateY(-8px);opacity:0} to{transform:translateY(0);opacity:1} }
+.slide-in { animation: slideIn 0.3s ease-out; }
+
+@keyframes spin { to{transform:rotate(360deg)} }
+.spin { animation: spin 0.8s linear infinite; }
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: #080810; }
+::-webkit-scrollbar-thumb { background: #1A1A2E; border-radius: 3px; }
