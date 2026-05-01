@@ -63,6 +63,59 @@ Optum AI is hiring senior, lead, and director ML engineers to build large scale 
 
 Cortex is a working, deployable take on all three pillars in one repo. It runs on a real LLM, real embeddings, real vector search, and a real Postgres + FastAPI + React stack with Docker Compose, the same shape you would expect from a production ML platform team.
 
+## Deploy
+
+### AWS (Amplify + App Runner + RDS)
+
+The most "Optum-shaped" deploy. App Runner runs the same Docker image you use
+locally, RDS gives you managed Postgres, Amplify hosts the static frontend.
+
+1. **Push the backend image to ECR**
+   ```bash
+   aws ecr create-repository --repository-name ro-cortex-backend
+   docker build -f backend/Dockerfile.prod -t ro-cortex-backend backend/
+   docker tag ro-cortex-backend:latest <acct>.dkr.ecr.<region>.amazonaws.com/ro-cortex-backend:latest
+   aws ecr get-login-password | docker login --username AWS --password-stdin <acct>.dkr.ecr.<region>.amazonaws.com
+   docker push <acct>.dkr.ecr.<region>.amazonaws.com/ro-cortex-backend:latest
+   ```
+
+2. **Spin up RDS Postgres** (db.t3.micro for free tier). Note the connection string.
+
+3. **Create the App Runner service** — point at your ECR image, set env vars
+   `ANTHROPIC_API_KEY` and `DATABASE_URL` in the console. App Runner reads
+   `apprunner.yaml` automatically.
+
+4. **Connect Amplify** — in the Amplify console, connect this GitHub repo. It
+   reads `amplify.yml` and builds the `frontend/` directory. Add `VITE_API_URL`
+   pointing at your App Runner URL.
+
+### Firebase Hosting + Cloud Run + Supabase
+
+Cheaper, scales to zero, no Cloud SQL bill. The frontend lives on Firebase
+Hosting, the backend container runs on Cloud Run, and Supabase handles Postgres.
+
+1. **Build and deploy the backend to Cloud Run**
+   ```bash
+   gcloud builds submit backend --tag gcr.io/<project>/ro-cortex-backend
+   gcloud run deploy ro-cortex-api \
+     --image gcr.io/<project>/ro-cortex-backend \
+     --region us-central1 \
+     --memory 2Gi \
+     --set-env-vars "ANTHROPIC_API_KEY=...,DATABASE_URL=postgresql://..."
+   ```
+
+2. **Provision Supabase Postgres** (free tier). Copy the connection string into
+   the Cloud Run env var above.
+
+3. **Deploy the frontend to Firebase Hosting**
+   ```bash
+   cd frontend && npm run build && cd ..
+   firebase deploy --only hosting
+   ```
+   `firebase.json` and `.firebaserc` are already set up. Set `VITE_API_URL`
+   in `frontend/.env.production` before building so the bundle points at your
+   Cloud Run URL.
+
 ## Architecture
 
 ```

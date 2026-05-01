@@ -1,0 +1,22 @@
+# AWS Amplify build spec for the React frontend.
+# In the Amplify console: connect this repo, set the build root to "frontend",
+# and add VITE_API_URL pointing at your App Runner URL.
+
+version: 1
+applications:
+  - appRoot: frontend
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - npm ci
+        build:
+          commands:
+            - npm run build
+      artifacts:
+        baseDirectory: dist
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*

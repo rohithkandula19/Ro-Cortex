@@ -1,4 +1,6 @@
 .env
+.env.production
+.firebase/
 .claude/
 __pycache__/
 *.pyc

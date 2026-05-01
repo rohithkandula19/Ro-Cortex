@@ -1,0 +1,21 @@
+# AWS App Runner config — points at the production Dockerfile.
+# After pushing to ECR, create an App Runner service with this file as the
+# source config and App Runner reads everything below.
+
+version: 1.0
+runtime: docker
+build:
+  commands:
+    build:
+      - echo "Image is built and pushed to ECR before deploy"
+run:
+  runtime-version: latest
+  command: uvicorn main:app --host 0.0.0.0 --port 8080
+  network:
+    port: 8080
+    env: PORT
+  env:
+    - name: PORT
+      value: "8080"
+    # set ANTHROPIC_API_KEY and DATABASE_URL via the App Runner console
+    # (Configuration → Edit → Environment variables) so they don't live in git

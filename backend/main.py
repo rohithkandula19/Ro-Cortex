@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional, List
 import json
+import os
 import asyncio
 from datetime import datetime
 
@@ -18,9 +19,13 @@ logger = logging.getLogger("cortex.main")
 
 app = FastAPI(title="RO Cortex", description="Clinical NLP Intelligence Platform")
 
+# In production you probably want to lock CORS down to your actual frontend
+# origin. For the demo we keep it open so localhost dev + the deployed frontend
+# both work without juggling env vars.
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[o.strip() for o in ALLOWED_ORIGINS.split(",")] if ALLOWED_ORIGINS != "*" else ["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
