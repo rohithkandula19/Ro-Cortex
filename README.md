@@ -1,76 +1,55 @@
-# RO Cortex — Clinical NLP Intelligence Platform
+# RO Cortex
 
-End-to-end clinical NLP platform that transforms unstructured doctor notes into structured intelligence.
+Turn unstructured clinical notes into structured patient data, then match those patients to clinical trials.
 
 ## What it does
 
-1. **Clinical NER** — Extracts diagnoses, medications, vitals, lab results, referrals from unstructured notes
-2. **ICD-10 Classification** — Deep learning multi-label classifier assigns standardized medical codes
-3. **Patient-Trial Matching** — BioBERT embeddings + FAISS vector search matches patients to clinical trials
-4. **Full Pipeline** — All 3 steps in one call, end-to-end
+1. **Note extraction** pulls diagnoses, medications with doses, vitals, lab results, symptoms, and referrals out of free text clinical notes
+2. **ICD-10 coding** assigns standardized billing codes to each diagnosis with a confidence score
+3. **Trial matching** ranks active clinical trials for a given patient using semantic similarity plus rule based eligibility
+4. **End to end pipeline** runs all three steps in a single call
 
-## Deep Learning Stack
+## Stack
 
-- **ClinicalBERT** — Named Entity Recognition on clinical text
-- **BioBERT (sentence-transformers)** — Clinical text embeddings for semantic matching
-- **FAISS** — Fast vector similarity search for trial matching
-- **Claude Sonnet** — LLM backbone for NER + ICD classification
-- **Multi-label Classification** — ICD-10 code assignment
+- **Claude Haiku 4.5** for the extraction and coding work, with prompt caching on the ICD reference list
+- **BioBERT sentence transformer** (`pritamdeka/BioBERT-mnli-snli-scinli-scitail-mednli-stsb`) for clinical text embeddings
+- **FAISS** for fast nearest neighbor search over trial embeddings
+- **FastAPI** backend, **PostgreSQL** for persistence, **React + Vite** frontend, all wired up with Docker Compose
 
-## Quick Start
+## Quick start
 
-### With Docker (recommended)
 ```bash
 cp .env.example .env
-# Add your ANTHROPIC_API_KEY
+# Add your ANTHROPIC_API_KEY to .env
 
 docker-compose up --build
 ```
 
-### Without Docker
-```bash
-# Backend
-cd backend
-pip install -r requirements.txt
-python -m spacy download en_core_web_sm
-uvicorn main:app --reload --port 8000
-
-# Frontend
-cd frontend
-npm install
-npm run dev
-```
-
-## Open
 - Frontend: http://localhost:3000
-- API Docs: http://localhost:8000/docs
+- API docs: http://localhost:8000/docs
 
 ## Pages
 
 | Page | What it does |
 |---|---|
-| Dashboard | Overview, pipeline visualization, recent analyses |
-| NER Extract | Paste a clinical note → get structured entities + ICD codes |
-| Trial Matcher | Enter patient profile → match to clinical trials |
-| Full Pipeline | One note → NER + ICD + Trial matching in one flow |
-| History | All past analyses with expandable detail |
+| Dashboard | Live counters, pipeline diagram, and recent activity |
+| Extract | Paste a note, get back structured entities and ICD codes |
+| Trial Matcher | Drop in a patient profile, see ranked trial matches with eligibility reasons |
+| Pipeline | Run extraction, coding, and trial matching together on a single note |
+| History | Browse every analysis your team has run |
 
 ## API
 
-| Endpoint | Description |
+| Endpoint | What it returns |
 |---|---|
-| POST /extract | Clinical NER + ICD classification |
-| POST /match-trials | BioBERT patient-trial matching |
-| POST /analyze-full | Full pipeline in one call |
-| GET /notes | Analysis history |
-| GET /stats | Aggregate statistics |
-| GET /trials | Available clinical trials |
-| GET /demo-notes | Sample clinical notes for testing |
+| `POST /extract` | Structured entities plus ICD-10 codes for one note |
+| `POST /match-trials` | Ranked trial matches for a patient profile |
+| `POST /analyze-full` | Extraction, coding, and trial matching together |
+| `GET /notes` | Recent analyses |
+| `GET /stats` | Aggregate counters |
+| `GET /trials` | Available demo trials |
+| `GET /demo-notes` | Sample notes for testing |
 
-## Relevant for Optum AI
+## Why this exists
 
-This directly mirrors the core clinical NLP work at Optum:
-- Extracting structured data from unstructured clinical notes
-- ICD-10 code classification from free text
-- Patient matching for clinical trial identification
-- Production-ready FastAPI + PostgreSQL + Docker architecture
+This mirrors the kind of clinical NLP work that sits behind real payer and provider workflows: pulling structured data out of unstructured prose, assigning codes for billing and analytics, and connecting eligible patients to research opportunities.

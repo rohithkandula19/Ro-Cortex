@@ -30,8 +30,8 @@ export default function ExtractedCard({ data, icdCodes }) {
         <p className="text-xs mono mb-3" style={{ color: '#555566' }}>PATIENT PROFILE</p>
         <div className="grid grid-cols-3 gap-3">
           {[
-            ['Age', patient.age || '—'],
-            ['Gender', patient.gender || '—'],
+            ['Age', patient.age || '-'],
+            ['Gender', patient.gender || '-'],
             ['Confidence', `${data.confidence_score || 0}%`],
           ].map(([l, v]) => (
             <div key={l}>

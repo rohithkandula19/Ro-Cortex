@@ -18,7 +18,7 @@ export default function History() {
   return (
     <div>
       <p className="text-sm font-medium mb-4" style={{ color: '#A0A0B0' }}>
-        Analysis History — {notes.length} records
+        Analysis History · {notes.length} records
       </p>
 
       {loading ? (
@@ -29,7 +29,7 @@ export default function History() {
         <div style={{ background: '#0F0F1C', border: '1px solid #1A1A2E', borderRadius: 12 }}
           className="p-12 text-center">
           <p className="mono text-sm" style={{ color: '#333355' }}>
-            No analyses yet — go to NER Extract or Full Pipeline to get started
+            No analyses yet. Head over to NER Extract or Full Pipeline to get started.
           </p>
         </div>
       ) : (
@@ -50,13 +50,13 @@ export default function History() {
                   background: expanded === i ? '#12122A' : 'transparent'
                 }}>
                 <span className="mono text-xs" style={{ color: '#555566' }}>
-                  {note.created_at ? new Date(note.created_at).toLocaleTimeString() : '—'}
+                  {note.created_at ? new Date(note.created_at).toLocaleTimeString() : '-'}
                 </span>
                 <span className="truncate pr-4 text-xs" style={{ color: '#C0C0D0' }}>
                   {note.raw_text}
                 </span>
                 <span className="text-xs" style={{ color: '#FF6B35' }}>
-                  {(note.diagnoses || []).slice(0, 2).join(', ') || '—'}
+                  {(note.diagnoses || []).slice(0, 2).join(', ') || '-'}
                 </span>
                 <span className="mono text-xs" style={{ color: '#FFD700' }}>
                   {(note.icd_codes || []).length} codes
@@ -79,7 +79,7 @@ export default function History() {
                       <p className="text-xs mono mb-2" style={{ color: '#555566' }}>ICD-10 CODES</p>
                       {(note.icd_codes || []).map((c, j) => (
                         <p key={j} className="text-xs mb-1 mono" style={{ color: '#FFD700' }}>
-                          {c.icd_code} — {c.diagnosis}
+                          {c.icd_code} · {c.diagnosis}
                         </p>
                       ))}
                     </div>

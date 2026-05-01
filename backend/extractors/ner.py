@@ -2,10 +2,13 @@ import anthropic
 import os
 import re
 import json
+import logging
+
+logger = logging.getLogger("cortex.ner")
+logging.basicConfig(level=logging.INFO)
 
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
-# ICD-10 code mapping for common conditions
 ICD_MAP = {
     "diabetes": "E11.9", "t2dm": "E11.9", "type 2 diabetes": "E11.9",
     "hypertension": "I10", "htn": "I10", "high blood pressure": "I10",
@@ -22,98 +25,92 @@ ICD_MAP = {
     "sepsis": "A41.9", "covid": "U07.1",
 }
 
+
 def extract_icd_codes(diagnoses: list) -> list:
     codes = []
     for diag in diagnoses:
-        diag_lower = diag.lower()
+        diag_lower = (diag or "").lower()
+        matched = False
         for condition, code in ICD_MAP.items():
             if condition in diag_lower:
                 codes.append({"diagnosis": diag, "icd_code": code})
+                matched = True
                 break
-        else:
+        if not matched:
             codes.append({"diagnosis": diag, "icd_code": "Unknown"})
     return codes
 
 
-async def extract_clinical_entities(note_text: str) -> dict:
-    """
-    Deep learning-powered clinical NER using Claude as the LLM backbone.
-    Extracts structured entities from unstructured clinical notes.
-    """
-    try:
-        prompt = f"""You are a clinical NLP system specialized in Named Entity Recognition (NER) for medical text.
+SYSTEM_PROMPT = """You are a clinical NLP system that extracts entities from medical notes.
 
-Extract ALL clinical entities from this medical note and return ONLY valid JSON.
-
-Clinical Note:
-{note_text}
-
-Extract and return this exact JSON structure:
-{{
-  "patient": {{
-    "age": null,
-    "gender": null,
-    "patient_id": null
-  }},
+Return ONLY a single JSON object with this exact shape, no prose, no markdown:
+{
+  "patient": {"age": null, "gender": null, "patient_id": null},
   "diagnoses": [],
-  "medications": [
-    {{"name": "", "dose": "", "frequency": "", "route": ""}}
-  ],
-  "vitals": {{
-    "blood_pressure": null,
-    "heart_rate": null,
-    "temperature": null,
-    "weight": null,
-    "height": null,
-    "bmi": null,
-    "o2_saturation": null,
-    "respiratory_rate": null
-  }},
+  "medications": [{"name": "", "dose": "", "frequency": "", "route": ""}],
+  "vitals": {
+    "blood_pressure": null, "heart_rate": null, "temperature": null,
+    "weight": null, "height": null, "bmi": null,
+    "o2_saturation": null, "respiratory_rate": null
+  },
   "procedures": [],
-  "lab_results": [
-    {{"test": "", "value": "", "unit": "", "flag": ""}}
-  ],
+  "lab_results": [{"test": "", "value": "", "unit": "", "flag": ""}],
   "referrals": [],
   "allergies": [],
   "symptoms": [],
-  "timeline": {{}},
+  "timeline": {},
   "clinical_summary": ""
-}}
+}
 
 Rules:
-- Extract exact values from the note, do not infer
-- For medications include name, dose, frequency if mentioned
-- For vitals extract exact numbers
-- For timeline include relevant dates or timeframes mentioned
-- clinical_summary should be 1-2 sentences
-- Return ONLY the JSON, no explanation"""
+- Pull values verbatim from the note. Do not invent.
+- Empty arrays are fine when nothing is mentioned, but extract everything you can find.
+- Diagnoses include both spelled out names ("Type 2 diabetes") and abbreviations ("T2DM", "CHF") as written.
+- Medications list every drug with dose and frequency when present.
+- Vitals must be exact values from the note.
+- clinical_summary is one sentence in plain language.
+- Output the JSON object only."""
 
+
+def _strip_to_json(text: str) -> str:
+    text = text.strip()
+    if "```json" in text:
+        text = text.split("```json", 1)[1].split("```", 1)[0].strip()
+    elif "```" in text:
+        text = text.split("```", 1)[1].split("```", 1)[0].strip()
+    start = text.find("{")
+    end = text.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        text = text[start:end + 1]
+    return text
+
+
+async def extract_clinical_entities(note_text: str) -> dict:
+    try:
         response = client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-haiku-4-5",
             max_tokens=1500,
-            messages=[{"role": "user", "content": prompt}]
+            system=[{"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
+            messages=[{"role": "user", "content": f"Clinical note:\n\n{note_text}"}]
         )
 
-        text = response.content[0].text.strip()
+        raw = response.content[0].text
+        cleaned = _strip_to_json(raw)
 
-        # Clean JSON
-        if "```json" in text:
-            text = text.split("```json")[1].split("```")[0].strip()
-        elif "```" in text:
-            text = text.split("```")[1].split("```")[0].strip()
+        try:
+            extracted = json.loads(cleaned)
+        except json.JSONDecodeError as je:
+            logger.error("NER JSON parse failed: %s\nRaw response head: %s", je, raw[:400])
+            return _fallback_extraction(note_text)
 
-        extracted = json.loads(text)
-
-        # Add ICD codes
-        diagnoses = extracted.get("diagnoses", [])
+        diagnoses = extracted.get("diagnoses") or []
         extracted["icd_codes"] = extract_icd_codes(diagnoses)
 
-        # Confidence score based on completeness
         score = 0
         if extracted.get("patient", {}).get("age"): score += 15
-        if extracted.get("diagnoses"): score += 25
+        if diagnoses: score += 25
         if extracted.get("medications"): score += 20
-        if extracted.get("vitals"): score += 15
+        if any((extracted.get("vitals") or {}).values()): score += 15
         if extracted.get("symptoms"): score += 10
         if extracted.get("procedures"): score += 10
         if extracted.get("lab_results"): score += 5
@@ -121,14 +118,15 @@ Rules:
 
         return extracted
 
-    except json.JSONDecodeError:
+    except anthropic.APIError as ae:
+        logger.error("Anthropic API error in NER: %s", ae)
         return _fallback_extraction(note_text)
     except Exception as e:
+        logger.exception("Unexpected NER failure: %s", e)
         return _fallback_extraction(note_text)
 
 
 def _fallback_extraction(text: str) -> dict:
-    """Regex-based fallback NER when LLM fails"""
     age_match = re.search(r'(\d+)\s*(?:yo|year[s]?\s*old|y\.o\.)', text, re.IGNORECASE)
     bp_match = re.search(r'(?:BP|blood pressure)[:\s]*(\d+/\d+)', text, re.IGNORECASE)
     hr_match = re.search(r'(?:HR|heart rate)[:\s]*(\d+)', text, re.IGNORECASE)

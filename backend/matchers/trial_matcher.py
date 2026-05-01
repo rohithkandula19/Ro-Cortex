@@ -122,7 +122,7 @@ async def match_patient_to_trials(patient_data: dict, trials: List[dict]) -> Lis
         if overlapping:
             match_reasons.append(f"Matching conditions: {', '.join(overlapping)}")
 
-        eligible = len(disqualifiers) == 0 and (semantic_score > 40 or overlapping)
+        eligible = bool(len(disqualifiers) == 0 and (semantic_score > 40 or overlapping))
         final_score = semantic_score * 0.6 + (30 if overlapping else 0) + (10 if not disqualifiers else 0)
 
         results.append({

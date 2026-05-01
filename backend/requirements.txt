@@ -1,17 +1,10 @@
 fastapi
 uvicorn
 sqlalchemy
-asyncpg
 psycopg2-binary
 anthropic
-python-dotenv
 pydantic
-httpx
-transformers
 sentence-transformers
 faiss-cpu
 numpy
-scikit-learn
-pandas
-spacy
 torch --index-url https://download.pytorch.org/whl/cpu

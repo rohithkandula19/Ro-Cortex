@@ -1,6 +1,9 @@
 import anthropic
 import os
 import json
+import logging
+
+logger = logging.getLogger("cortex.icd")
 
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
@@ -44,35 +47,28 @@ async def classify_icd_codes(clinical_text: str, diagnoses: list) -> list:
         return []
 
     try:
-        prompt = f"""You are a medical coding specialist. Assign ICD-10-CM codes to these diagnoses.
-
-Clinical Note Context: {clinical_text[:500]}
-
-Diagnoses to code: {json.dumps(diagnoses)}
+        system_prompt = f"""You are a medical coding specialist. Assign ICD-10-CM codes to diagnoses.
 
 Available ICD-10 codes:
 {json.dumps(ICD10_REFERENCE, indent=2)}
 
-Return ONLY a JSON array:
-[
-  {{
-    "diagnosis": "original diagnosis text",
-    "icd_code": "ICD-10 code",
-    "description": "official ICD-10 description",
-    "confidence": 0.95
-  }}
-]
-
 Rules:
 - Use exact ICD-10 codes from the reference above
-- If no match found use "Z99.89" with description "Other dependence on enabling machines and devices"
+- If no match found use "Z99.89" with description "Other"
 - Confidence 0.9+ for exact match, 0.7-0.89 for close match, below 0.7 for uncertain
-- Return ONLY the JSON array"""
+- Return ONLY a JSON array of {{diagnosis, icd_code, description, confidence}}"""
+
+        user_prompt = f"""Diagnoses to code: {json.dumps(diagnoses)}
+
+Context: {clinical_text[:300]}
+
+Return ONLY the JSON array."""
 
         response = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=800,
-            messages=[{"role": "user", "content": prompt}]
+            model="claude-haiku-4-5",
+            max_tokens=600,
+            system=[{"type": "text", "text": system_prompt, "cache_control": {"type": "ephemeral"}}],
+            messages=[{"role": "user", "content": user_prompt}]
         )
 
         text = response.content[0].text.strip()
@@ -85,7 +81,7 @@ Rules:
         return codes
 
     except Exception as e:
-        # Fallback: simple string matching
+        logger.exception("ICD classification failed, using fallback: %s", e)
         results = []
         for diag in diagnoses:
             diag_lower = diag.lower()

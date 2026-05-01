@@ -55,10 +55,10 @@ export default function Trials() {
           disabled={loading}
           className="w-full py-3 rounded-xl font-semibold text-sm mb-4"
           style={{ background: loading ? '#1A1A2E' : '#7B2FBE', color: loading ? '#555566' : '#FFFFFF', cursor: loading ? 'not-allowed' : 'pointer' }}>
-          {loading ? 'Running BioBERT matching...' : 'Match to Clinical Trials →'}
+          {loading ? 'Searching trials...' : 'Find matching trials'}
         </button>
 
-        <p className="text-xs mono mb-2" style={{ color: '#555566' }}>Sample Patients:</p>
+        <p className="text-xs mono mb-2" style={{ color: '#555566' }}>Try a sample patient:</p>
         <div className="flex flex-col gap-2">
           {SAMPLE_PATIENTS.map((p, i) => (
             <button key={i}
@@ -80,12 +80,12 @@ export default function Trials() {
 
       {/* Right */}
       <div>
-        <p className="text-sm font-medium mb-3" style={{ color: '#A0A0B0' }}>Trial Matches</p>
+        <p className="text-sm font-medium mb-3" style={{ color: '#A0A0B0' }}>Eligible trials</p>
         {!result && !loading && (
           <div style={{ background: '#0F0F1C', border: '1px solid #1A1A2E', borderRadius: 12 }}
             className="p-8 text-center h-64 flex items-center justify-center">
             <p className="mono text-sm" style={{ color: '#333355' }}>
-              Select a patient to find matching trials
+              Pick a patient on the left to see matching trials.
             </p>
           </div>
         )}
@@ -94,7 +94,7 @@ export default function Trials() {
             className="p-8 text-center flex flex-col items-center justify-center gap-3" style={{ minHeight: 200 }}>
             <div className="w-6 h-6 rounded-full border-2 spin"
               style={{ borderColor: '#7B2FBE', borderTopColor: 'transparent' }} />
-            <p className="mono text-sm" style={{ color: '#7B2FBE' }}>BioBERT embeddings + FAISS search...</p>
+            <p className="mono text-sm" style={{ color: '#7B2FBE' }}>Embedding the patient and ranking trials...</p>
           </div>
         )}
         {result && (
@@ -105,14 +105,14 @@ export default function Trials() {
                 <p className="text-2xl font-bold mono" style={{ color: '#00D4FF' }}>
                   {result.total_trials_evaluated}
                 </p>
-                <p className="text-xs" style={{ color: '#555566' }}>Trials Evaluated</p>
+                <p className="text-xs" style={{ color: '#555566' }}>trials reviewed</p>
               </div>
               <div className="p-3 rounded-lg flex-1 text-center"
                 style={{ background: '#0F0F1C', border: '1px solid #00FF8844' }}>
                 <p className="text-2xl font-bold mono" style={{ color: '#00FF88' }}>
                   {result.eligible_count}
                 </p>
-                <p className="text-xs" style={{ color: '#555566' }}>Eligible</p>
+                <p className="text-xs" style={{ color: '#555566' }}>eligible</p>
               </div>
             </div>
             <div className="flex flex-col gap-3">

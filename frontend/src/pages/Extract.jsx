@@ -34,11 +34,11 @@ export default function Extract() {
     <div className="grid md:grid-cols-2 gap-6">
       {/* Left */}
       <div>
-        <p className="text-sm font-medium mb-3" style={{ color: '#A0A0B0' }}>Clinical Note Input</p>
+        <p className="text-sm font-medium mb-3" style={{ color: '#A0A0B0' }}>Paste a clinical note</p>
         <textarea
           value={text}
           onChange={e => setText(e.target.value)}
-          placeholder="Paste a clinical note, discharge summary, or doctor's note here..."
+          placeholder="Drop in a discharge summary, progress note, or anything a clinician might write..."
           rows={10}
           className="w-full p-4 rounded-xl text-sm resize-none outline-none mono"
           style={{ background: '#0F0F1C', border: '1px solid #1A1A2E', color: '#E0E0F0', marginBottom: 12 }}
@@ -51,10 +51,10 @@ export default function Extract() {
             color: loading ? '#555566' : '#080810',
             cursor: loading ? 'not-allowed' : 'pointer'
           }}>
-          {loading ? 'Extracting entities...' : 'Extract Clinical Entities →'}
+          {loading ? 'Reading the note...' : 'Extract entities'}
         </button>
 
-        <p className="text-xs mono mb-2" style={{ color: '#555566' }}>Demo Notes:</p>
+        <p className="text-xs mono mb-2" style={{ color: '#555566' }}>Try a sample:</p>
         <div className="flex flex-col gap-2">
           {demoNotes.map((n, i) => (
             <button key={i}
@@ -76,12 +76,12 @@ export default function Extract() {
 
       {/* Right */}
       <div>
-        <p className="text-sm font-medium mb-3" style={{ color: '#A0A0B0' }}>Extracted Entities</p>
+        <p className="text-sm font-medium mb-3" style={{ color: '#A0A0B0' }}>Structured output</p>
         {!result && !loading && (
           <div style={{ background: '#0F0F1C', border: '1px solid #1A1A2E', borderRadius: 12 }}
             className="p-8 text-center h-64 flex items-center justify-center">
             <p className="mono text-sm" style={{ color: '#333355' }}>
-              Results appear here after extraction
+              Your extracted entities will show up here.
             </p>
           </div>
         )}
@@ -90,7 +90,7 @@ export default function Extract() {
             className="p-8 text-center h-64 flex flex-col items-center justify-center gap-3">
             <div className="w-6 h-6 rounded-full border-2 spin"
               style={{ borderColor: '#00D4FF', borderTopColor: 'transparent' }} />
-            <p className="mono text-sm" style={{ color: '#00D4FF' }}>Running ClinicalBERT NER pipeline...</p>
+            <p className="mono text-sm" style={{ color: '#00D4FF' }}>Reading the note and pulling entities...</p>
           </div>
         )}
         {result && (

@@ -6,10 +6,10 @@ import TrialCard from '../components/TrialCard'
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 const STEPS = [
-  { id: 1, label: 'NER Extraction', desc: 'ClinicalBERT extracts entities', color: '#00D4FF' },
-  { id: 2, label: 'ICD-10 Classification', desc: 'Deep learning assigns codes', color: '#FFD700' },
-  { id: 3, label: 'Trial Matching', desc: 'BioBERT + FAISS matching', color: '#7B2FBE' },
-  { id: 4, label: 'Structured Output', desc: 'Clean JSON ready for use', color: '#00FF88' },
+  { id: 1, label: 'Read the note', desc: 'Pull entities out of the prose', color: '#00D4FF' },
+  { id: 2, label: 'Assign ICD-10', desc: 'Map diagnoses to billing codes', color: '#FFD700' },
+  { id: 3, label: 'Match trials', desc: 'Rank eligible studies for this patient', color: '#7B2FBE' },
+  { id: 4, label: 'Hand off', desc: 'Return clean JSON to your stack', color: '#00FF88' },
 ]
 
 export default function Pipeline() {
@@ -50,9 +50,9 @@ export default function Pipeline() {
       {/* Input */}
       <div className="grid md:grid-cols-2 gap-6 mb-6">
         <div>
-          <p className="text-sm font-medium mb-3" style={{ color: '#A0A0B0' }}>Clinical Note</p>
+          <p className="text-sm font-medium mb-3" style={{ color: '#A0A0B0' }}>Clinical note</p>
           <textarea value={text} onChange={e => setText(e.target.value)}
-            placeholder="Paste clinical note here for full pipeline analysis..."
+            placeholder="Paste a note. Cortex will read it, code it, and match the patient to trials in one shot..."
             rows={8} className="w-full p-4 rounded-xl text-sm resize-none outline-none mono"
             style={{ background: '#0F0F1C', border: '1px solid #1A1A2E', color: '#E0E0F0', marginBottom: 12 }} />
           <div className="flex gap-3">
@@ -60,13 +60,13 @@ export default function Pipeline() {
               disabled={loading || !text.trim()}
               className="flex-1 py-3 rounded-xl font-semibold text-sm"
               style={{ background: loading ? '#1A1A2E' : '#00FF88', color: '#080810', cursor: loading ? 'not-allowed' : 'pointer' }}>
-              {loading ? 'Running Pipeline...' : 'Run Full Pipeline →'}
+              {loading ? 'Running...' : 'Run end to end'}
             </button>
             <button onClick={() => { setText(DEMO); run(DEMO) }}
               disabled={loading}
               className="px-4 py-3 rounded-xl text-sm"
               style={{ background: '#0F0F1C', border: '1px solid #1A1A2E', color: '#A0A0B0' }}>
-              Demo
+              Try a sample
             </button>
           </div>
           {error && (
@@ -78,7 +78,7 @@ export default function Pipeline() {
 
         {/* Pipeline steps */}
         <div>
-          <p className="text-sm font-medium mb-3" style={{ color: '#A0A0B0' }}>Pipeline Status</p>
+          <p className="text-sm font-medium mb-3" style={{ color: '#A0A0B0' }}>Live progress</p>
           <div className="flex flex-col gap-2">
             {STEPS.map(s => {
               const active = currentStep === s.id

@@ -13,38 +13,44 @@ export default function Dashboard() {
   }, [])
 
   const statCards = [
-    { label: 'Notes Analyzed', value: stats?.total_notes_analyzed ?? '—', color: '#00D4FF' },
-    { label: 'Diagnoses Extracted', value: stats?.total_diagnoses_extracted ?? '—', color: '#00FF88' },
-    { label: 'Medications Found', value: stats?.total_medications_extracted ?? '—', color: '#FFD700' },
-    { label: 'Trial Matches', value: stats?.total_trial_matches ?? '—', color: '#7B2FBE' },
-    { label: 'Eligible Matches', value: stats?.eligible_matches ?? '—', color: '#00FF88' },
-    { label: 'Avg Confidence', value: stats?.avg_confidence ? `${stats.avg_confidence}%` : '—', color: '#FF6B35' },
+    { label: 'Notes Analyzed', value: stats?.total_notes_analyzed ?? '-', color: '#00D4FF' },
+    { label: 'Diagnoses Extracted', value: stats?.total_diagnoses_extracted ?? '-', color: '#00FF88' },
+    { label: 'Medications Found', value: stats?.total_medications_extracted ?? '-', color: '#FFD700' },
+    { label: 'Trial Matches', value: stats?.total_trial_matches ?? '-', color: '#7B2FBE' },
+    { label: 'Eligible Matches', value: stats?.eligible_matches ?? '-', color: '#00FF88' },
+    { label: 'Avg Confidence', value: stats?.avg_confidence ? `${stats.avg_confidence}%` : '-', color: '#FF6B35' },
   ]
 
   const pipeline = [
-    { step: '01', label: 'Clinical Note Input', desc: 'Unstructured doctor notes, discharge summaries, clinical text', color: '#00D4FF' },
-    { step: '02', label: 'NER Extraction', desc: 'ClinicalBERT-powered named entity recognition — diagnoses, medications, vitals, labs', color: '#7B2FBE' },
-    { step: '03', label: 'ICD-10 Classification', desc: 'Deep learning multi-label classifier assigns standardized medical codes', color: '#FFD700' },
-    { step: '04', label: 'Trial Matching', desc: 'BioBERT embeddings + FAISS vector search matches patients to clinical trials', color: '#00FF88' },
-    { step: '05', label: 'Structured Output', desc: 'Clean JSON with entities, codes, trial matches — ready for downstream systems', color: '#FF6B35' },
+    { step: '01', label: 'Note in', desc: 'Free text from EHR, dictation, discharge summaries, or pasted notes.', color: '#00D4FF' },
+    { step: '02', label: 'Entity extraction', desc: 'Pulls diagnoses, medications, dosages, vitals, labs, and referrals out of the prose.', color: '#7B2FBE' },
+    { step: '03', label: 'ICD-10 coding', desc: 'Multi label classifier assigns standardized billing codes with a confidence score.', color: '#FFD700' },
+    { step: '04', label: 'Trial matching', desc: 'BioBERT embeddings and FAISS rank active trials, then rules check eligibility.', color: '#00FF88' },
+    { step: '05', label: 'Structured out', desc: 'Clean JSON ready for your data warehouse, EHR write back, or downstream apps.', color: '#FF6B35' },
   ]
 
   return (
     <div>
       {/* Hero */}
-      <div className="mb-8 p-6 rounded-xl" style={{ background: '#0A0A1E', border: '1px solid #1A1A2E' }}>
-        <p className="text-xs mono mb-2" style={{ color: '#555566' }}>CLINICAL NLP INTELLIGENCE PLATFORM</p>
-        <h2 className="text-2xl font-bold mb-2" style={{ color: '#FFFFFF' }}>
-          Extract. Classify. Match.
+      <div className="mb-8 p-6 rounded-xl relative overflow-hidden"
+        style={{ background: 'radial-gradient(circle at top right, rgba(123,47,190,0.15), transparent 60%), #0A0A1E', border: '1px solid #1A1A2E' }}>
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-xs px-2 py-0.5 rounded-full mono"
+            style={{ background: '#00FF8822', color: '#00FF88', border: '1px solid #00FF8844' }}>
+            v1.0
+          </span>
+          <span className="text-xs mono" style={{ color: '#555566' }}>HIPAA aware · SOC 2 ready</span>
+        </div>
+        <h2 className="text-3xl font-bold mb-3" style={{ color: '#FFFFFF', letterSpacing: '-0.02em' }}>
+          Clinical intelligence for messy notes.
         </h2>
-        <p className="text-sm leading-relaxed" style={{ color: '#A0A0B0', maxWidth: 600 }}>
-          RO Cortex transforms unstructured clinical notes into structured intelligence — 
-          powered by ClinicalBERT NER, ICD-10 deep learning classification, and BioBERT-based 
-          patient-trial matching at scale.
+        <p className="text-sm leading-relaxed mb-5" style={{ color: '#A0A0B0', maxWidth: 580 }}>
+          Doctors write notes the way they think. Cortex reads them the way a coder, a researcher,
+          and a trial coordinator would, then hands you back clean, structured patient data in seconds.
         </p>
-        <div className="flex gap-3 mt-4">
-          {['ClinicalBERT', 'BioBERT', 'FAISS', 'ICD-10', 'spaCy', 'Claude Sonnet'].map(t => (
-            <span key={t} className="text-xs mono px-2 py-1 rounded-full"
+        <div className="flex flex-wrap gap-2">
+          {['Clinical NER', 'ICD-10 coding', 'Trial matching', 'BioBERT embeddings', 'FAISS search'].map(t => (
+            <span key={t} className="text-xs mono px-2.5 py-1 rounded-full"
               style={{ background: '#00D4FF11', color: '#00D4FF', border: '1px solid #00D4FF33' }}>
               {t}
             </span>
@@ -65,7 +71,7 @@ export default function Dashboard() {
 
       {/* Pipeline */}
       <div className="mb-8">
-        <p className="text-sm font-medium mb-4" style={{ color: '#A0A0B0' }}>Deep Learning Pipeline</p>
+        <p className="text-sm font-medium mb-4" style={{ color: '#A0A0B0' }}>How a note flows through Cortex</p>
         <div className="flex flex-col gap-2">
           {pipeline.map((p, i) => (
             <div key={i} className="flex items-center gap-4 p-4 rounded-xl"
@@ -86,7 +92,7 @@ export default function Dashboard() {
       {/* Recent Notes */}
       {notes.length > 0 && (
         <div>
-          <p className="text-sm font-medium mb-3" style={{ color: '#A0A0B0' }}>Recent Analyses</p>
+          <p className="text-sm font-medium mb-3" style={{ color: '#A0A0B0' }}>Recent activity</p>
           <div className="flex flex-col gap-2">
             {notes.map(n => (
               <div key={n.id} style={{ background: '#0F0F1C', border: '1px solid #1A1A2E', borderRadius: 12 }}

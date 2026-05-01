@@ -7,10 +7,14 @@ import json
 import asyncio
 from datetime import datetime
 
+import logging
+
 from database import init_db, get_db, ClinicalNote, Patient, ClinicalTrial, TrialMatch
 from extractors.ner import extract_clinical_entities
-from matchers.trial_matcher import match_patient_to_trials, DEMO_TRIALS, embed_text, patient_to_text
+from matchers.trial_matcher import match_patient_to_trials, DEMO_TRIALS, embed_text, patient_to_text, get_embedding_model
 from classifiers.icd_classifier import classify_icd_codes
+
+logger = logging.getLogger("cortex.main")
 
 app = FastAPI(title="RO Cortex", description="Clinical NLP Intelligence Platform")
 
@@ -50,6 +54,12 @@ class TrialRequest(BaseModel):
 def startup():
     init_db()
     seed_demo_trials()
+    logger.info("Preloading BioBERT embedding model...")
+    try:
+        get_embedding_model()
+        logger.info("BioBERT model ready")
+    except Exception as e:
+        logger.warning("BioBERT preload failed (will load on first request): %s", e)
 
 def seed_demo_trials():
     db = next(get_db())

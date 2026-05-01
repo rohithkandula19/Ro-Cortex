@@ -7,8 +7,6 @@ services:
       POSTGRES_USER: cortex
       POSTGRES_PASSWORD: cortex123
       POSTGRES_DB: cortex
-    ports:
-      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -16,8 +14,9 @@ services:
     build: ./backend
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - DATABASE_URL=postgresql://cortex:cortex123@postgres:5432/cortex
     depends_on:
       - postgres
@@ -29,6 +28,9 @@ services:
     build: ./frontend
     ports:
       - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     depends_on:
       - backend
 
