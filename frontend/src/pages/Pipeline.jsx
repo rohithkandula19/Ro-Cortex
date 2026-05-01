@@ -40,52 +40,55 @@ export default function Pipeline() {
     <div>
       <div className="grid md:grid-cols-2 gap-6 mb-8">
         <div>
-          <p className="text-sm font-medium mb-3" style={{ color: '#161624' }}>Clinical note</p>
+          <p className="text-sm font-medium mb-3" style={{ color: '#1B1A1F' }}>Clinical note</p>
           <textarea value={text} onChange={e => setText(e.target.value)}
             placeholder="Paste a note. Cortex will read it, code it, and match the patient to trials in one shot..."
             rows={8} className="w-full p-4 rounded-2xl text-sm resize-none outline-none mono"
-            style={{ background: '#FFFFFF', border: '1px solid #F1E2D4', color: '#161624', marginBottom: 12 }} />
+            style={{ background: '#FFFDF8', border: '1px solid #E4D9C5', color: '#1B1A1F', marginBottom: 12 }} />
           <div className="flex gap-3">
-            <button onClick={() => run()} disabled={loading || !text.trim()} className="btn-primary flex-1">
-              {loading ? 'Running...' : 'Run end to end'}
+            <button onClick={() => run()} disabled={loading || !text.trim()} className="btn-primary flex-1 justify-center">
+              {loading ? 'Running pipeline...' : 'Run end to end'}
+              {!loading && (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 5l7 7-7 7" /></svg>
+              )}
             </button>
             <button onClick={() => { setText(DEMO); run(DEMO) }} disabled={loading} className="btn-secondary">
-              Try a sample
+              Try sample
             </button>
           </div>
           {error && (
-            <div className="mt-3 p-3 rounded-xl" style={{ background: '#FFF1F1', border: '1px solid #F5C6CB' }}>
-              <p className="text-xs mono" style={{ color: '#E5484D' }}>{error}</p>
+            <div className="mt-3 p-3 rounded-xl" style={{ background: '#FCEBED', border: '1px solid #F1B5BC' }}>
+              <p className="text-xs mono" style={{ color: '#B23A48' }}>{error}</p>
             </div>
           )}
         </div>
 
         <div>
-          <p className="text-sm font-medium mb-3" style={{ color: '#161624' }}>Live progress</p>
+          <p className="text-sm font-medium mb-3" style={{ color: '#1B1A1F' }}>Live progress</p>
           <div className="flex flex-col gap-2">
             {STEPS.map(s => {
               const active = currentStep === s.id
               const done = currentStep > s.id
               return (
-                <div key={s.id} className="flex items-center gap-4 p-4 rounded-2xl transition-all"
+                <div key={s.id} className="flex items-center gap-4 p-4 rounded-xl transition-all"
                   style={{
-                    background: done ? '#F4FBF7' : active ? '#FFF1E8' : '#FFFFFF',
-                    border: `1px solid ${done ? '#BBE5CD' : active ? '#FFD9C7' : '#F1E2D4'}`,
+                    background: done ? '#E8F2EE' : active ? '#FAF6EE' : '#FFFDF8',
+                    border: `1px solid ${done ? '#BBE0D0' : active ? '#C9A961' : '#E4D9C5'}`,
                   }}>
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                    style={{ background: done ? '#22A06B' : active ? '#FF6B47' : '#FFFAF6', border: done || active ? 'none' : '1px solid #F1E2D4' }}>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: done ? '#1F7A57' : active ? '#0F4F4A' : '#F4EEE3', border: done || active ? 'none' : '1px solid #E4D9C5' }}>
                     {done ? (
-                      <span className="text-xs font-bold" style={{ color: '#FFFFFF' }}>✓</span>
+                      <span className="text-xs font-bold" style={{ color: '#FAF6EE' }}>✓</span>
                     ) : active ? (
                       <div className="w-3 h-3 rounded-full border-2 spin"
-                        style={{ borderColor: '#FFFFFF', borderTopColor: 'transparent' }} />
+                        style={{ borderColor: '#C9A961', borderTopColor: 'transparent' }} />
                     ) : (
-                      <span className="text-xs mono" style={{ color: '#6B6B7C' }}>{s.id}</span>
+                      <span className="text-xs mono font-semibold" style={{ color: '#6F6A66' }}>{s.id}</span>
                     )}
                   </div>
                   <div>
-                    <p className="text-sm font-medium" style={{ color: '#161624' }}>{s.label}</p>
-                    <p className="text-xs" style={{ color: '#6B6B7C' }}>{s.desc}</p>
+                    <p className="text-sm font-semibold" style={{ color: '#1B1A1F' }}>{s.label}</p>
+                    <p className="text-xs" style={{ color: '#6F6A66' }}>{s.desc}</p>
                   </div>
                 </div>
               )
@@ -96,35 +99,35 @@ export default function Pipeline() {
 
       {result && (
         <div className="slide-in">
-          <div className="flex gap-3 mb-6 flex-wrap">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-px mb-6" style={{ background: '#E4D9C5', border: '1px solid #E4D9C5', borderRadius: 14, overflow: 'hidden' }}>
             {[
-              ['Confidence', `${result.confidence_score}%`],
-              ['Diagnoses', result.extracted?.diagnoses?.length || 0],
-              ['Medications', result.extracted?.medications?.length || 0],
-              ['ICD codes', result.icd_codes?.length || 0],
-              ['Eligible trials', result.eligible_trials?.length || 0],
-            ].map(([l, v]) => (
-              <div key={l} className="card p-4 text-center flex-1 min-w-28">
-                <p className="display text-3xl" style={{ color: '#161624' }}>{v}</p>
-                <p className="text-xs" style={{ color: '#6B6B7C' }}>{l}</p>
+              ['Confidence', `${result.confidence_score}%`, result.confidence_score >= 70 ? '#1F7A57' : '#B8862C'],
+              ['Diagnoses', result.extracted?.diagnoses?.length || 0, '#1B1A1F'],
+              ['Medications', result.extracted?.medications?.length || 0, '#1B1A1F'],
+              ['ICD codes', result.icd_codes?.length || 0, '#C25E3B'],
+              ['Eligible trials', result.eligible_trials?.length || 0, '#0F4F4A'],
+            ].map(([l, v, c]) => (
+              <div key={l} className="px-4 py-5 text-center" style={{ background: '#FFFDF8' }}>
+                <p className="display text-3xl font-semibold mb-1" style={{ color: c }}>{v}</p>
+                <p className="text-xs font-medium" style={{ color: '#6F6A66' }}>{l}</p>
               </div>
             ))}
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <p className="text-sm font-medium mb-3" style={{ color: '#161624' }}>Extracted data</p>
+              <p className="text-sm font-medium mb-3" style={{ color: '#1B1A1F' }}>Extracted data</p>
               <ExtractedCard data={result.extracted} icdCodes={result.icd_codes} />
             </div>
             <div>
-              <p className="text-sm font-medium mb-3" style={{ color: '#161624' }}>Trial matches</p>
+              <p className="text-sm font-medium mb-3" style={{ color: '#1B1A1F' }}>Trial matches</p>
               {result.trial_matches?.length > 0 ? (
                 <div className="flex flex-col gap-3">
                   {result.trial_matches.map((m, i) => <TrialCard key={i} match={m} />)}
                 </div>
               ) : (
                 <div className="card p-8 text-center">
-                  <p className="text-sm" style={{ color: '#6B6B7C' }}>No matching trials found.</p>
+                  <p className="text-sm" style={{ color: '#6F6A66' }}>No matching trials found.</p>
                 </div>
               )}
             </div>
