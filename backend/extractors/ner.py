@@ -26,6 +26,31 @@ ICD_MAP = {
 }
 
 
+ICD_DESCRIPTIONS = {
+    "E11.9": "Type 2 diabetes mellitus, uncomplicated",
+    "I10": "Essential hypertension",
+    "N18.3": "Chronic kidney disease, stage 3",
+    "C50.9": "Malignant neoplasm of breast, unspecified",
+    "C80.1": "Malignant neoplasm, unspecified",
+    "J45.909": "Asthma, unspecified, uncomplicated",
+    "J44.9": "Chronic obstructive pulmonary disease, unspecified",
+    "I50.9": "Heart failure, unspecified",
+    "I48.91": "Atrial fibrillation, unspecified",
+    "J18.9": "Pneumonia, unspecified organism",
+    "F32.9": "Major depressive disorder, single episode",
+    "F41.9": "Anxiety disorder, unspecified",
+    "E03.9": "Hypothyroidism, unspecified",
+    "E78.5": "Hyperlipidemia, unspecified",
+    "E66.9": "Obesity, unspecified",
+    "D64.9": "Anemia, unspecified",
+    "I63.9": "Cerebral infarction, unspecified",
+    "I21.9": "Acute myocardial infarction, unspecified",
+    "A41.9": "Sepsis, unspecified organism",
+    "U07.1": "COVID-19",
+    "Unknown": "No matching ICD-10 code in reference",
+}
+
+
 def extract_icd_codes(diagnoses: list) -> list:
     codes = []
     for diag in diagnoses:
@@ -33,11 +58,21 @@ def extract_icd_codes(diagnoses: list) -> list:
         matched = False
         for condition, code in ICD_MAP.items():
             if condition in diag_lower:
-                codes.append({"diagnosis": diag, "icd_code": code})
+                codes.append({
+                    "diagnosis": diag,
+                    "icd_code": code,
+                    "description": ICD_DESCRIPTIONS.get(code, ""),
+                    "confidence": 0.92,
+                })
                 matched = True
                 break
         if not matched:
-            codes.append({"diagnosis": diag, "icd_code": "Unknown"})
+            codes.append({
+                "diagnosis": diag,
+                "icd_code": "Unknown",
+                "description": ICD_DESCRIPTIONS["Unknown"],
+                "confidence": 0.4,
+            })
     return codes
 
 

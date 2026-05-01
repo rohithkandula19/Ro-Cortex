@@ -3,75 +3,109 @@ export default function ExtractedCard({ data, icdCodes }) {
   const patient = data.patient || {}
   const diagnoses = data.diagnoses || []
   const medications = data.medications || []
-  const vitals = data.vitals || {}
-  const symptoms = data.symptoms || []
+  const vitals = Object.fromEntries(
+    Object.entries(data.vitals || {}).filter(([, v]) => v !== null && v !== undefined && v !== '')
+  )
+  const labResults = (data.lab_results || []).filter(l =>
+    typeof l === 'string' ? l.trim() : (l.test || l.value)
+  )
+  const symptoms = data.diagnoses ? (data.symptoms || []) : []
   const procedures = data.procedures || []
   const referrals = data.referrals || []
-  const labResults = data.lab_results || []
+  const allergies = data.allergies || []
 
-  const Tag = ({ text, color = '#00D4FF' }) => (
-    <span className="inline-block px-2 py-0.5 rounded-full text-xs mono mr-1 mb-1"
-      style={{ background: `${color}22`, color, border: `1px solid ${color}44` }}>
-      {text}
-    </span>
-  )
+  const VITAL_LABELS = {
+    blood_pressure: 'Blood pressure',
+    heart_rate: 'Heart rate',
+    temperature: 'Temperature',
+    weight: 'Weight',
+    height: 'Height',
+    bmi: 'BMI',
+    o2_saturation: 'O2 saturation',
+    respiratory_rate: 'Respiratory rate',
+  }
 
-  const Section = ({ title, children, color = '#A0A0B0' }) => (
-    <div className="mb-4">
-      <p className="text-xs mono mb-2" style={{ color: '#555566' }}>{title}</p>
-      {children}
+  const SectionHeader = ({ label, count }) => (
+    <div className="flex items-center justify-between mb-3">
+      <p className="text-xs mono font-semibold tracking-wider" style={{ color: '#6B6B7C' }}>{label}</p>
+      {count !== undefined && (
+        <span className="text-xs mono px-2 py-0.5 rounded-full"
+          style={{ background: '#FFE9DC', color: '#C0421E' }}>{count}</span>
+      )}
     </div>
   )
 
+  const Tag = ({ text, tone = 'coral' }) => {
+    const tones = {
+      coral: { bg: '#FFE9DC', fg: '#C0421E' },
+      gold: { bg: '#FEF3C7', fg: '#9A6700' },
+      purple: { bg: '#EDE9FE', fg: '#6D28D9' },
+      teal: { bg: '#CFFAFE', fg: '#0E7490' },
+      green: { bg: '#DCFCE7', fg: '#15803D' },
+      red: { bg: '#FEE2E2', fg: '#B91C1C' },
+    }
+    const t = tones[tone] || tones.coral
+    return (
+      <span className="inline-block px-2.5 py-1 rounded-full text-xs"
+        style={{ background: t.bg, color: t.fg }}>{text}</span>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-4">
-      {/* Patient Info */}
-      <div style={{ background: '#0F0F1C', border: '1px solid #1A1A2E', borderRadius: 12 }} className="p-4">
-        <p className="text-xs mono mb-3" style={{ color: '#555566' }}>PATIENT PROFILE</p>
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            ['Age', patient.age || '-'],
-            ['Gender', patient.gender || '-'],
-            ['Confidence', `${data.confidence_score || 0}%`],
-          ].map(([l, v]) => (
-            <div key={l}>
-              <p className="text-xs" style={{ color: '#555566' }}>{l}</p>
-              <p className="text-lg font-bold mono" style={{ color: '#00D4FF' }}>{v}</p>
-            </div>
-          ))}
+      {/* Patient header */}
+      <div className="card p-5">
+        <SectionHeader label="PATIENT" />
+        <div className="grid grid-cols-3 gap-4 mb-4">
+          <div>
+            <p className="text-xs" style={{ color: '#6B6B7C' }}>Age</p>
+            <p className="display text-2xl" style={{ color: '#161624' }}>{patient.age || '-'}</p>
+          </div>
+          <div>
+            <p className="text-xs" style={{ color: '#6B6B7C' }}>Gender</p>
+            <p className="display text-2xl capitalize" style={{ color: '#161624' }}>{patient.gender || '-'}</p>
+          </div>
+          <div>
+            <p className="text-xs" style={{ color: '#6B6B7C' }}>Confidence</p>
+            <p className="display text-2xl" style={{ color: data.confidence_score >= 70 ? '#22A06B' : '#F59E0B' }}>
+              {data.confidence_score || 0}%
+            </p>
+          </div>
         </div>
         {data.clinical_summary && (
-          <p className="text-xs mt-3 leading-relaxed" style={{ color: '#A0A0B0' }}>
-            {data.clinical_summary}
-          </p>
+          <div className="pt-4" style={{ borderTop: '1px solid #F5E6D7' }}>
+            <p className="text-xs mono mb-2" style={{ color: '#6B6B7C' }}>SUMMARY</p>
+            <p className="text-sm leading-relaxed" style={{ color: '#3C3C4C' }}>
+              {data.clinical_summary}
+            </p>
+          </div>
         )}
       </div>
 
-      {/* Diagnoses + ICD */}
+      {/* Diagnoses with ICD codes */}
       {diagnoses.length > 0 && (
-        <div style={{ background: '#0F0F1C', border: '1px solid #1A1A2E', borderRadius: 12 }} className="p-4">
-          <p className="text-xs mono mb-3" style={{ color: '#555566' }}>DIAGNOSES + ICD-10 CODES</p>
+        <div className="card p-5">
+          <SectionHeader label="DIAGNOSES & ICD-10" count={diagnoses.length} />
           <div className="flex flex-col gap-2">
-            {(icdCodes || []).map((item, i) => (
-              <div key={i} className="flex items-center justify-between p-2 rounded-lg"
-                style={{ background: '#12122A' }}>
-                <div>
-                  <p className="text-sm" style={{ color: '#E0E0F0' }}>{item.diagnosis}</p>
-                  <p className="text-xs mono" style={{ color: '#555566' }}>{item.description}</p>
+            {(icdCodes && icdCodes.length > 0 ? icdCodes : diagnoses.map(d => ({ diagnosis: d }))).map((item, i) => (
+              <div key={i} className="grid grid-cols-[1fr_auto] gap-3 items-center p-3 rounded-xl"
+                style={{ background: '#FFFAF6', border: '1px solid #F5E6D7' }}>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium" style={{ color: '#161624' }}>{item.diagnosis}</p>
+                  {item.description && (
+                    <p className="text-xs truncate" style={{ color: '#6B6B7C' }}>{item.description}</p>
+                  )}
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold mono" style={{ color: '#FFD700' }}>{item.icd_code}</p>
-                  {item.confidence && (
-                    <p className="text-xs mono" style={{ color: '#555566' }}>
+                <div className="text-right flex-shrink-0">
+                  {item.icd_code && (
+                    <p className="text-sm font-semibold mono" style={{ color: '#FF6B47' }}>{item.icd_code}</p>
+                  )}
+                  {item.confidence !== undefined && (
+                    <p className="text-xs mono" style={{ color: '#6B6B7C' }}>
                       {Math.round(item.confidence * 100)}%
                     </p>
                   )}
                 </div>
-              </div>
-            ))}
-            {(!icdCodes || icdCodes.length === 0) && diagnoses.map((d, i) => (
-              <div key={i}>
-                <Tag text={d} color="#FF6B35" />
               </div>
             ))}
           </div>
@@ -80,21 +114,18 @@ export default function ExtractedCard({ data, icdCodes }) {
 
       {/* Medications */}
       {medications.length > 0 && (
-        <div style={{ background: '#0F0F1C', border: '1px solid #1A1A2E', borderRadius: 12 }} className="p-4">
-          <p className="text-xs mono mb-3" style={{ color: '#555566' }}>MEDICATIONS</p>
+        <div className="card p-5">
+          <SectionHeader label="MEDICATIONS" count={medications.length} />
           <div className="flex flex-col gap-2">
             {medications.map((med, i) => {
               const m = typeof med === 'string' ? { name: med } : med
+              const subline = [m.dose, m.frequency, m.route].filter(Boolean).join(' · ')
               return (
-                <div key={i} className="flex items-center gap-3 p-2 rounded-lg"
-                  style={{ background: '#12122A' }}>
-                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#00FF88' }} />
-                  <div>
-                    <p className="text-sm font-medium" style={{ color: '#E0E0F0' }}>{m.name}</p>
-                    <p className="text-xs mono" style={{ color: '#555566' }}>
-                      {[m.dose, m.frequency, m.route].filter(Boolean).join(' · ')}
-                    </p>
-                  </div>
+                <div key={i} className="grid grid-cols-[10px_1fr_auto] gap-3 items-center p-3 rounded-xl"
+                  style={{ background: '#FFFAF6', border: '1px solid #F5E6D7' }}>
+                  <span className="w-2 h-2 rounded-full" style={{ background: '#22A06B' }} />
+                  <p className="text-sm font-medium" style={{ color: '#161624' }}>{m.name}</p>
+                  <p className="text-xs mono text-right" style={{ color: '#6B6B7C' }}>{subline || '-'}</p>
                 </div>
               )
             })}
@@ -103,50 +134,88 @@ export default function ExtractedCard({ data, icdCodes }) {
       )}
 
       {/* Vitals */}
-      {Object.values(vitals).some(Boolean) && (
-        <div style={{ background: '#0F0F1C', border: '1px solid #1A1A2E', borderRadius: 12 }} className="p-4">
-          <p className="text-xs mono mb-3" style={{ color: '#555566' }}>VITALS</p>
-          <div className="grid grid-cols-2 gap-2">
-            {Object.entries(vitals).filter(([, v]) => v).map(([k, v]) => (
-              <div key={k} className="p-2 rounded-lg" style={{ background: '#12122A' }}>
-                <p className="text-xs" style={{ color: '#555566' }}>{k.replace(/_/g, ' ').toUpperCase()}</p>
-                <p className="text-sm font-bold mono" style={{ color: '#00D4FF' }}>{v}</p>
+      {Object.keys(vitals).length > 0 && (
+        <div className="card p-5">
+          <SectionHeader label="VITALS" count={Object.keys(vitals).length} />
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            {Object.entries(vitals).map(([k, v]) => (
+              <div key={k} className="p-3 rounded-xl"
+                style={{ background: '#FFFAF6', border: '1px solid #F5E6D7' }}>
+                <p className="text-xs mb-1" style={{ color: '#6B6B7C' }}>{VITAL_LABELS[k] || k.replace(/_/g, ' ')}</p>
+                <p className="text-base font-semibold mono" style={{ color: '#161624' }}>{v}</p>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Other entities */}
-      <div style={{ background: '#0F0F1C', border: '1px solid #1A1A2E', borderRadius: 12 }} className="p-4">
-        <div className="grid grid-cols-2 gap-4">
-          {symptoms.length > 0 && (
-            <Section title="SYMPTOMS">
-              {symptoms.map((s, i) => <Tag key={i} text={s} color="#FFD700" />)}
-            </Section>
-          )}
-          {procedures.length > 0 && (
-            <Section title="PROCEDURES">
-              {procedures.map((p, i) => <Tag key={i} text={p} color="#7B2FBE" />)}
-            </Section>
-          )}
-          {referrals.length > 0 && (
-            <Section title="REFERRALS">
-              {referrals.map((r, i) => <Tag key={i} text={r} color="#FF6B35" />)}
-            </Section>
-          )}
-          {labResults.length > 0 && (
-            <Section title="LAB RESULTS">
-              {labResults.map((l, i) => {
-                const item = typeof l === 'string' ? { test: l } : l
-                return (
-                  <Tag key={i} text={`${item.test}${item.value ? ': ' + item.value : ''}`} color="#00CED1" />
-                )
-              })}
-            </Section>
-          )}
+      {/* Lab results */}
+      {labResults.length > 0 && (
+        <div className="card p-5">
+          <SectionHeader label="LAB RESULTS" count={labResults.length} />
+          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #F5E6D7' }}>
+            <div className="grid grid-cols-[1.4fr_1fr_0.6fr_0.6fr] px-3 py-2 text-xs mono"
+              style={{ background: '#FFFAF6', color: '#6B6B7C' }}>
+              <span>Test</span><span>Value</span><span>Unit</span><span className="text-right">Flag</span>
+            </div>
+            {labResults.map((l, i) => {
+              const item = typeof l === 'string' ? { test: l } : l
+              const flagColor = item.flag === 'H' || item.flag === 'high' ? '#B91C1C'
+                              : item.flag === 'L' || item.flag === 'low' ? '#1D4ED8'
+                              : '#6B6B7C'
+              return (
+                <div key={i} className="grid grid-cols-[1.4fr_1fr_0.6fr_0.6fr] px-3 py-2.5 text-sm"
+                  style={{ borderTop: '1px solid #F5E6D7', color: '#161624' }}>
+                  <span>{item.test || '-'}</span>
+                  <span className="font-medium mono">{item.value || '-'}</span>
+                  <span className="mono" style={{ color: '#6B6B7C' }}>{item.unit || '-'}</span>
+                  <span className="text-right mono font-semibold" style={{ color: flagColor }}>{item.flag || '-'}</span>
+                </div>
+              )
+            })}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Symptoms */}
+      {symptoms.length > 0 && (
+        <div className="card p-5">
+          <SectionHeader label="SYMPTOMS" count={symptoms.length} />
+          <div className="flex flex-wrap gap-1.5">
+            {symptoms.map((s, i) => <Tag key={i} text={s} tone="gold" />)}
+          </div>
+        </div>
+      )}
+
+      {/* Procedures */}
+      {procedures.length > 0 && (
+        <div className="card p-5">
+          <SectionHeader label="PROCEDURES" count={procedures.length} />
+          <div className="flex flex-wrap gap-1.5">
+            {procedures.map((p, i) => <Tag key={i} text={p} tone="purple" />)}
+          </div>
+        </div>
+      )}
+
+      {/* Referrals */}
+      {referrals.length > 0 && (
+        <div className="card p-5">
+          <SectionHeader label="REFERRALS" count={referrals.length} />
+          <div className="flex flex-wrap gap-1.5">
+            {referrals.map((r, i) => <Tag key={i} text={r} tone="coral" />)}
+          </div>
+        </div>
+      )}
+
+      {/* Allergies */}
+      {allergies.length > 0 && (
+        <div className="card p-5">
+          <SectionHeader label="ALLERGIES" count={allergies.length} />
+          <div className="flex flex-wrap gap-1.5">
+            {allergies.map((a, i) => <Tag key={i} text={a} tone="red" />)}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -100,9 +100,7 @@ async def extract_note(request: NoteRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Note text too short")
 
     extracted = await extract_clinical_entities(request.text)
-    diagnoses = extracted.get("diagnoses", [])
-    icd_codes = await classify_icd_codes(request.text, diagnoses) if diagnoses else []
-    extracted["icd_codes"] = icd_codes
+    icd_codes = extracted.get("icd_codes", [])
 
     # Save to DB
     note = ClinicalNote(
@@ -181,15 +179,10 @@ async def analyze_full(request: NoteRequest, db: Session = Depends(get_db)):
     Full pipeline: Extract entities → Classify ICD codes → Match trials
     End-to-end clinical NLP in one call.
     """
-    # Step 1: Extract
     extracted = await extract_clinical_entities(request.text)
     diagnoses = extracted.get("diagnoses", [])
+    icd_codes = extracted.get("icd_codes", [])
 
-    # Step 2: ICD classification
-    icd_codes = await classify_icd_codes(request.text, diagnoses) if diagnoses else []
-    extracted["icd_codes"] = icd_codes
-
-    # Step 3: Build patient profile from extracted data
     patient_data = {
         "age": extracted.get("patient", {}).get("age"),
         "gender": extracted.get("patient", {}).get("gender"),
@@ -201,7 +194,6 @@ async def analyze_full(request: NoteRequest, db: Session = Depends(get_db)):
         "symptoms": extracted.get("symptoms", []),
     }
 
-    # Step 4: Match to trials
     matches = await match_patient_to_trials(patient_data, DEMO_TRIALS)
 
     # Save to DB
@@ -269,19 +261,46 @@ def get_trials():
     return DEMO_TRIALS
 
 
-# Demo notes for quick testing
 DEMO_NOTES = [
     {
-        "label": "🫀 Diabetic Patient",
+        "label": "Diabetic patient",
         "text": "67 year old male presents with poorly controlled T2DM (HbA1c 9.2%). Currently on Metformin 1000mg BID and Glipizide 5mg daily. BP 148/92 mmHg, HR 78 bpm. Weight 98kg. Reports increased thirst and frequent urination. Labs show eGFR 52 (CKD stage 3). Referred to endocrinology for insulin initiation. Advised dietary modification and increased physical activity."
     },
     {
-        "label": "🎗️ Oncology Patient",
+        "label": "Oncology patient",
         "text": "54 year old female with stage II breast cancer, ER-positive. Currently on Tamoxifen 20mg daily. Last mammogram 6 months ago showed stable disease. Referred to oncology for follow-up and consideration of aromatase inhibitor switch. Patient reports mild joint pain and hot flashes. No evidence of metastatic disease on recent CT chest/abdomen/pelvis."
     },
     {
-        "label": "❤️ Cardiac Patient",
+        "label": "Cardiac patient",
         "text": "72 year old male admitted for acute exacerbation of CHF. EF 30% on last echo. On Carvedilol 25mg BID, Lisinopril 10mg daily, Furosemide 40mg daily, Spironolactone 25mg daily. BP 110/70, HR 88, O2 sat 94% on room air. Weight gain of 4kg in past week. BNP elevated at 1200. Chest X-ray shows pulmonary edema. Plan to increase Furosemide and monitor closely."
+    },
+    {
+        "label": "COPD exacerbation",
+        "text": "63 year old female with severe COPD presents with 4 days of worsening dyspnea and productive cough with yellow sputum. Former smoker, 40 pack-years. Home meds include Tiotropium 18mcg daily, Albuterol PRN, and Fluticasone-Salmeterol 250/50 BID. BP 132/84, HR 102, RR 24, O2 sat 88% on room air. FEV1 38% predicted. Started on Prednisone 40mg daily and Azithromycin 500mg. Admitted for IV steroids and nebulized bronchodilators."
+    },
+    {
+        "label": "Stroke workup",
+        "text": "78 year old male brought in by EMS with sudden onset right-sided weakness and slurred speech, last seen normal 2 hours ago. NIHSS 14. History of HTN, hyperlipidemia, and atrial fibrillation. Home meds: Apixaban 5mg BID, Metoprolol 50mg BID, Atorvastatin 40mg daily. BP 178/96, HR 92 irregularly irregular. CT head shows no hemorrhage. CTA reveals left MCA occlusion. Activated stroke team for thrombectomy evaluation."
+    },
+    {
+        "label": "Pediatric asthma",
+        "text": "9 year old female with known asthma presents to ED with acute wheezing for 6 hours, not responsive to home albuterol. Mom reports recent URI. RR 32, HR 128, O2 sat 91% on room air, audible wheezing throughout. Peak flow 45% personal best. Given Albuterol-Ipratropium nebulizer x3 and Dexamethasone 0.6mg/kg PO. Improved to 96% on room air after treatment. Discharged with 5-day Prednisolone burst and asthma action plan review."
+    },
+    {
+        "label": "Postpartum check",
+        "text": "32 year old female G2P2 at 6 weeks postpartum after uncomplicated vaginal delivery. Reports good mood, breastfeeding well, no incontinence. BP 118/72, HR 72, weight down 8kg from delivery. No signs of postpartum depression on EPDS screening (score 4). Pelvic exam normal, well-healed perineum. Counseled on contraception, started on progestin-only pill. Cleared for return to exercise."
+    },
+    {
+        "label": "Geriatric falls",
+        "text": "84 year old female brought in after mechanical fall at home, second fall this month. History includes osteoporosis, hypothyroidism on Levothyroxine 75mcg daily, and mild cognitive impairment. No loss of consciousness. Vitals stable: BP 138/78, HR 76. Exam shows bruise over right hip, no fracture on X-ray. Orthostatic vitals positive. Reviewed home meds: holding Lorazepam, dose-reduced Lisinopril. Referred to PT for balance training and home safety evaluation."
+    },
+    {
+        "label": "Mental health visit",
+        "text": "28 year old male presents for follow-up of major depressive disorder and generalized anxiety. Started Sertraline 50mg daily 6 weeks ago, titrated up from 25mg. Reports improved mood, less anhedonia, better sleep. Still some morning anxiety. PHQ-9 dropped from 18 to 9, GAD-7 from 14 to 8. No suicidal ideation. Continuing weekly CBT. Plan: increase Sertraline to 100mg daily, recheck in 4 weeks."
+    },
+    {
+        "label": "Sepsis workup",
+        "text": "71 year old male with history of T2DM and benign prostatic hyperplasia presents with 2 days of fever, dysuria, and confusion. Temp 39.2C, BP 92/58, HR 118, RR 22, O2 sat 95%. WBC 18.4 with left shift, lactate 3.1, creatinine 1.8 (baseline 1.1). UA shows pyuria and bacteriuria. Started on broad spectrum antibiotics (Piperacillin-Tazobactam), 30mL/kg fluid resuscitation, blood and urine cultures sent. Admitted to ICU for septic shock."
     },
 ]
 
