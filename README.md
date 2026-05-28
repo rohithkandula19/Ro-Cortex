@@ -1,3 +1,4 @@
+> **⚠️ All Rights Reserved.** This repository is published for viewing and portfolio purposes only. The code is **not** open source — reuse, redistribution, modification, or derivative works are not permitted without written permission. See [LICENSE](./LICENSE).
 # RO Cortex
 
 Clinical NLP that ships to production. Cortex extracts structured data from unstructured clinical notes, identifies patients for active trials, and feeds the result into downstream healthcare systems.
