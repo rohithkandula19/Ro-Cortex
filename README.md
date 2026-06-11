@@ -1,4 +1,4 @@
-> **⚠️ All Rights Reserved.** This repository is published for viewing and portfolio purposes only. The code is **not** open source — reuse, redistribution, modification, or derivative works are not permitted without written permission. See [LICENSE](./LICENSE).
+> **⚠️ All Rights Reserved.** This repository is published for viewing and portfolio purposes only. The code is **not** open source: reuse, redistribution, modification, or derivative works are not permitted without written permission. See [LICENSE](./LICENSE).
 # RO Cortex
 
 Clinical NLP that ships to production. Cortex extracts structured data from unstructured clinical notes, identifies patients for active trials, and feeds the result into downstream healthcare systems.
@@ -82,11 +82,11 @@ locally, RDS gives you managed Postgres, Amplify hosts the static frontend.
 
 2. **Spin up RDS Postgres** (db.t3.micro for free tier). Note the connection string.
 
-3. **Create the App Runner service** — point at your ECR image, set env vars
+3. **Create the App Runner service**: point at your ECR image, set env vars
    `ANTHROPIC_API_KEY` and `DATABASE_URL` in the console. App Runner reads
    `apprunner.yaml` automatically.
 
-4. **Connect Amplify** — in the Amplify console, connect this GitHub repo. It
+4. **Connect Amplify**: in the Amplify console, connect this GitHub repo. It
    reads `amplify.yml` and builds the `frontend/` directory. Add `VITE_API_URL`
    pointing at your App Runner URL.
 
